@@ -1,49 +1,75 @@
-# Transcrição de Entrevistas — Pipeline Local
+# Pipeline de Transcrição de Entrevistas
 
-Pipeline 100% off-line para transcrição de entrevistas com especialistas, garantindo conformidade total com a LGPD. Reduz o tempo de decupagem em até 70% em comparação com métodos manuais.
+Extrai mapas de montagem de transcrições **Whisper** usando **LLMs locais** (Ollama). Reduz o tempo de decupagem em aproximadamente **70%**.
 
-## Como funciona
+---
 
-1. **Entrada**: arquivo de áudio (MP3, WAV, M4A, OGG)
-2. **Processamento**: `faster-whisper` (modelo `base`, rodando localmente — GPU opcional)
-3. **Saída**: JSON estruturado com falas segmentadas, speaker detection e timestamps
-4. **Decupagem**: integração directa com Adobe Premiere (via arquivo de texto) ou DaVinci Resolve (via EDL)
+## O que faz
+
+1. Recebe um JSON de transcrição (saída do Whisper com timestamps)
+2. Envia para um modelo LLM rodando **localmente** via Ollama
+3. Extrai um **mapa de montagem estruturado** com:
+   - Cortes principais (`corte`)
+   - Reações/Inserts (`insert`)
+   - Overlays gráficos (`overlay`)
+   - Legendas isoladas (`texto`)
+   - Identificação de speaker
+   - Flags de "corte principal" do episódio
+4. Normaliza tracks (V1=Vídeo principal, V3=Inserts, V4=Overlays, V5=Texto)
+5. Dá match com arquivos de fonte via `meta.fontes`
+
+---
+
+## Requisitos
+
+- Python 3.11+
+- [Ollama](https://ollama.com) rodando localmente
+- Modelo recomendado: `mistral:latest` ou `llama3.2:3b`
 
 ## Instalação
 
 ```bash
-pip install faster-whisper ffmpeg-python
+pip install -r requirements.txt
 ```
 
-## Uso rápido
+## Uso
 
 ```bash
-python transcricao.py entrevista.mp3
+# Extrair mapa de montagem de uma transcrição
+python transcription_agent.py --input entrevista.json --output mapa.json
+
+# Com metadados de fontes multicam
+python transcription_agent.py --input entrevista.json --meta fontes.json --output mapa.json
 ```
 
-Gera `entrevista_transcricao.json` e `entrevista_srt`.
+## Estrutura do projeto
 
-## Saída JSON
+```
+.
+├── transcription_agent.py    # Agente de extração via LLM local
+├── requirements.txt
+└── README.md
+```
+
+## Exemplo de saída
 
 ```json
 {
-  "language": "pt",
-  "duration": 1845.2,
-  "segments": [
-    {"start": 0.0, "end": 5.2, "text": "A gente começou pensando em..."}
+  "titulo": "Entrevista 01",
+  "duracao_total": 300,
+  "cortes": [
+    {"inicio": 8, "fim": 18, "descricao": "Hook forte", "tipo": "corte", "speaker": "entrevistado", "principal": true, "track": "V1", "fonte": "A001_main.mp4"},
+    {"inicio": 45, "fim": 52, "descricao": "BROLL: Ambiente externo", "tipo": "insert", "speaker": "geral", "principal": false, "track": "V3", "fonte": "B001_broll.mp4"}
   ]
 }
 ```
 
-## Por que local
+## LGPD & Compliance
 
-- Dados nunca saem da máquina — zero dependências de nuvem
-- Compatibilidade com ambientes corporativos restringidos (proxy, VPN, air-gapped)
-- Sem custo de API — execução ilimitada
+- **100% local** — nenhum áudio ou transcrição sai da máquina
+- O LLM roda via Ollama na própria rede — zero envio para APIs externas
+- Dados sensíveis (entrevistas, pesquisas) nunca tocam a nuvem
 
-## Stack
+---
 
-- Python 3.10+
-- faster-whisper (CTranslate2)
-- FFmpeg (pré-processamento)
-- LGPD conforme
+**Stack:** Python, Ollama, JSON, Whisper (pré-processamento)
