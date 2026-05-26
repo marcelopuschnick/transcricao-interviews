@@ -1,6 +1,6 @@
 # Pipeline de Transcrição de Entrevistas
 
-Extrai mapas de montagem de transcrições **Whisper** usando **LLMs locais** (Ollama). Reduz o tempo de decupagem em aproximadamente **70%**.
+Extrai mapas de montagem de transcrições **Whisper** usando **LLMs locais** (Ollama). Automatiza a identificação de cortes, inserts, overlays e speakers que antes eram feitos manualmente.
 
 ---
 
